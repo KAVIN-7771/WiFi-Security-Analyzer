@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Security Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .network-status {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .status-indicator {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status-indicator.safe {
+            background: linear-gradient(135deg, #00d084 0%, #00a35f 100%);
+        }
+
+        .status-indicator.risky {
+            background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+        }
+
+        .status-indicator.unsafe {
+            background: linear-gradient(135deg, #ff6b6b 0%, #d41c1c 100%);
+        }
+
+        .status-indicator.caution {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        }
+
+        .status-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .threat-level {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .network-details {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .detail-value {
+            color: #555;
+            word-break: break-word;
+        }
+
+        .threats-list, .recommendations-list {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        .threats-list li, .recommendations-list li {
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .threats-list li {
+            background: #ffe5e5;
+            border-left: 4px solid #ff6b6b;
+            color: #c92a2a;
+        }
+
+        .recommendations-list li {
+            background: #e5f5ff;
+            border-left: 4px solid #4dabf7;
+            color: #1971c2;
+        }
+
+        .threats-list li:before {
+            content: "⚠️";
+            font-weight: bold;
+        }
+
+        .recommendations-list li:before {
+            content: "✓";
+            font-weight: bold;
+            color: #2f9e44;
+        }
+
+        .domain-checker {
+            background: white;
+            grid-column: 1 / -1;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .domain-checker h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .domain-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .domain-input-group input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .domain-input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .domain-input-group button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            font-size: 1em;
+        }
+
+        .domain-input-group button:hover {
+            transform: scale(1.05);
+        }
+
+        .domain-result {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .domain-result.show {
+            display: block;
+        }
+
+        .domain-result.safe {
+            background: #e5f5e5;
+            border-left: 4px solid #2f9e44;
+            color: #2f9e44;
+        }
+
+        .domain-result.unsafe {
+            background: #ffe5e5;
+            border-left: 4px solid #ff6b6b;
+            color: #c92a2a;
+        }
+
+        .domain-result h4 {
+            margin-bottom: 8px;
+        }
+
+        .nearby-networks {
+            background: white;
+            grid-column: 1 / -1;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-top: 20px;
+        }
+
+        .nearby-networks h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .networks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .network-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .network-item:hover {
+            background: #e8eaf6;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .network-item h4 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .network-status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #2f9e44;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .refresh-button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: background 0.3s ease;
+        }
+
+        .refresh-button:hover {
+            background: #764ba2;
+        }
+
+        .legend {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+
+        .legend-color.safe {
+            background: #2f9e44;
+        }
+
+        .legend-color.caution {
+            background: #ffc107;
+        }
+
+        .legend-color.risky {
+            background: #ffa500;
+        }
+
+        .legend-color.unsafe {
+            background: #ff6b6b;
+        }
+
+        .encryption-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .encryption-badge.secure {
+            background: #e5f5e5;
+            color: #2f9e44;
+        }
+
+        .encryption-badge.insecure {
+            background: #ffe5e5;
+            color: #c92a2a;
+        }
+
+        .score-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2f9e44 0%, #ffc107 50%, #ff6b6b 100%);
+            width: 50%;
+            transition: width 0.3s ease;
+        }
+
+        /* Security Details Modal */
+        .security-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .security-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .security-modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .security-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .security-modal-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .security-modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s ease;
+        }
+
+        .security-modal-close:hover {
+            color: #333;
+        }
+
+        .security-status-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .security-status-badge.secure {
+            background: #e8f5e9;
+            color: #2f9e44;
+        }
+
+        .security-status-badge.unsecure {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .security-network-name {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .security-details-section {
+            margin: 25px 0;
+        }
+
+        .security-section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .security-section-content {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .security-section-content.secure {
+            border-left-color: #2f9e44;
+            background: #f1f8f4;
+        }
+
+        .security-section-content.unsecure {
+            border-left-color: #ff6b6b;
+            background: #fff5f5;
+        }
+
+        .security-section-content ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .security-section-content li {
+            padding: 8px 0;
+            color: #555;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .security-section-content li strong {
+            color: #333;
+        }
+
+        .security-encryption-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+            margin-bottom: 20px;
+        }
+
+        .security-encryption-info.unsecure {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+        }
+
+        .security-footer {
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 2px solid #f0f0f0;
+            font-size: 13px;
+            color: #999;
+            text-align: center;
+        }
+
+        .security-action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+
+        .security-action-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .security-action-btn.close-btn {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .security-action-btn.close-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .security-action-btn.connect-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .security-action-btn.connect-btn:hover {
+            background: #764ba2;
+        }
+
+        .security-warning-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+        }
+
+        .security-warning-box strong {
+            color: #721c24;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div></div>
+                <a href="/admin/login" style="background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600; transition: all 0.3s ease; border: 2px solid rgba(255,255,255,0.3);" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">🔐 Admin Login</a>
+            </div>
+            <h1>🔒 WiFi Security Analyzer</h1>
+            <p>Check if your WiFi network is safe and secure</p>
+        </header>
+
+        <div class="main-grid">
+            <div class="card">
+                <h2>🌐 Current Network</h2>
+                <div id="loadingStatus" style="text-align: center; padding: 20px;">
+                    <div class="loading"></div>
+                    <p>Analyzing your network...</p>
+                </div>
+                <div id="currentNetworkContent" style="display: none;">
+                    <div class="network-status">
+                        <div id="statusIndicator" class="status-indicator"></div>
+                        <div class="status-info">
+                            <h3 id="networkName">Loading...</h3>
+                            <div class="threat-level" id="threatLevel">Analyzing...</div>
+                        </div>
+                    </div>
+                    <div class="network-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Network Name (SSID):</span>
+                            <span class="detail-value" id="ssid">N/A</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Signal Strength:</span>
+                            <span class="detail-value" id="signal">N/A</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Authentication:</span>
+                            <span class="detail-value" id="auth">N/A</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Encryption Status:</span>
+                            <span class="detail-value" id="encryption">N/A</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Router IP (Gateway):</span>
+                            <span class="detail-value" id="gateway">N/A</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Distance:</span>
+                            <span class="detail-value" id="distance">N/A</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Security Score:</span>
+                            <span class="detail-value" id="score">N/A</span>
+                        </div>
+                    </div>
+                    <div class="score-bar">
+                        <div class="score-fill" id="scoreFill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🚨 Detected Threats & Risks</h2>
+                <div id="threatsContent" style="display: none;">
+                    <ul class="threats-list" id="threatsList">
+                        <li>No threats detected</li>
+                    </ul>
+                </div>
+                <div id="noThreatsMsg" style="text-align: center; padding: 20px; color: #2f9e44;">
+                    <p>✓ Network appears to be secure</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>💡 Security Recommendations</h2>
+            <ul class="recommendations-list" id="recommendationsList">
+                <li>Analyzing network security...</li>
+            </ul>
+        </div>
+
+        <div class="domain-checker">
+            <h2>🔍 Domain Safety Checker</h2>
+            <div class="domain-input-group">
+                <input 
+                    type="text" 
+                    id="domainInput" 
+                    placeholder="Enter a domain name (e.g., example.com)" 
+                    onkeypress="handleDomainKeyPress(event)"
+                >
+                <button onclick="checkDomainSafety()">Check Domain</button>
+            </div>
+            <div id="domainResult" class="domain-result"></div>
+        </div>
+
+        <div class="nearby-networks">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>📡 Nearby WiFi Networks</h2>
+                <button class="refresh-button" onclick="loadNearbyNetworks()">Refresh</button>
+            </div>
+            <div id="networksLoading" style="text-align: center; padding: 20px;">
+                <div class="loading"></div>
+                <p>Scanning for nearby networks...</p>
+            </div>
+            <div class="networks-grid" id="networksGrid" style="display: none;"></div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color safe"></div>
+                <span><strong>SAFE</strong> - Excellent security</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color caution"></div>
+                <span><strong>CAUTION</strong> - Minor risks</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color risky"></div>
+                <span><strong>RISKY</strong> - Significant risks</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color unsafe"></div>
+                <span><strong>UNSAFE</strong> - Critical risks</span>
+            </div>
+        </div>
+
+        <button class="refresh-button" onclick="analyzeWiFi()" style="width: 100%; margin-top: 30px;">
+            🔄 Refresh Analysis
+        </button>
+
+        <!-- Demo Section -->
+        <div class="card" style="margin-top: 30px;">
+            <h2>📚 Demo - How It Works</h2>
+            <div style="margin-top: 15px;">
+                <p style="color: #666; margin-bottom: 15px;">Click below to see how the analyzer displays different network scenarios:</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                    <button onclick="showDemoSafeNetwork()" style="padding: 15px; background: #2f9e44; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1em; transition: background 0.3s;">
+                        ✓ Demo: Safe Network
+                    </button>
+                    <button onclick="showDemoUnsafeNetwork()" style="padding: 15px; background: #ff6b6b; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1em; transition: background 0.3s;">
+                        ⚠️ Demo: Unsafe Network
+                    </button>
+                </div>
+            </div>
+            <div id="demoContent" style="display: none; margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <!-- Demo will be displayed here -->
+            </div>
+        </div>
+
+        <!-- Video Demo Section -->
+        <div class="card" style="margin-top: 30px;">
+            <h2>🎥 Video Tutorials</h2>
+            <div style="margin-top: 15px;">
+                <p style="color: #666; margin-bottom: 20px;">Watch video demonstrations of how to use the WiFi Security Analyzer:</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                    <!-- Video 1: How to Use -->
+                    <div onclick="playVideo('how-to-use')" style="cursor: pointer; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s; background: white;">
+                        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #667eea;">
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 3em; margin-bottom: 10px;">▶️</div>
+                                    <div style="font-weight: 600;">How to Use</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="padding: 15px;">
+                            <h4 style="margin: 0 0 8px 0; color: #333;">Getting Started Guide</h4>
+                            <p style="margin: 0; font-size: 0.9em; color: #666;">Learn how to analyze your WiFi network and understand the results</p>
+                        </div>
+                    </div>
+
+                    <!-- Video 2: WiFi Security -->
+                    <div onclick="playVideo('wifi-security')" style="cursor: pointer; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s; background: white;">
+                        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #764ba2;">
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 3em; margin-bottom: 10px;">🔒</div>
+                                    <div style="font-weight: 600;">WiFi Security</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="padding: 15px;">
+                            <h4 style="margin: 0 0 8px 0; color: #333;">Security Best Practices</h4>
+                            <p style="margin: 0; font-size: 0.9em; color: #666;">Understand encryption types, threats, and how to stay safe online</p>
+                        </div>
+                    </div>
+
+                    <!-- Video 3: Threat Detection -->
+                    <div onclick="playVideo('threat-detection')" style="cursor: pointer; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s; background: white;">
+                        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #ff6b6b;">
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 3em; margin-bottom: 10px;">🚨</div>
+                                    <div style="font-weight: 600;">Threat Detection</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="padding: 15px;">
+                            <h4 style="margin: 0 0 8px 0; color: #333;">What Threats Look Like</h4>
+                            <p style="margin: 0; font-size: 0.9em; color: #666;">Learn to identify evil twin attacks, open networks, and malicious domains</p>
+                        </div>
+                    </div>
+
+                    <!-- Video 4: Domain Safety -->
+                    <div onclick="playVideo('domain-safety')" style="cursor: pointer; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s; background: white;">
+                        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #ffc107;">
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 3em; margin-bottom: 10px;">🔍</div>
+                                    <div style="font-weight: 600;">Domain Safety</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="padding: 15px;">
+                            <h4 style="margin: 0 0 8px 0; color: #333;">Check Website Safety</h4>
+                            <p style="margin: 0; font-size: 0.9em; color: #666;">How to verify if websites are safe before visiting them</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Player Modal -->
+            <div id="videoModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center;">
+                <div style="background: white; border-radius: 15px; padding: 0; width: 90%; max-width: 800px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); position: relative;">
+                    <button onclick="closeVideo()" style="position: absolute; top: 15px; right: 15px; background: #ff6b6b; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; font-size: 1.2em; z-index: 10;">✕</button>
+                    
+                    <div style="background: #f0f0f0; padding: 40px; text-align: center; min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <div id="videoContent" style="width: 100%;">
+                            <!-- Video content will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showDemoSafeNetwork() {
+            const demoData = {
+                network_info: {
+                    ssid: "HomeNetwork_Secure",
+                    signal: 92,
+                    auth: "WPA3-Personal",
+                    gateway: "192.168.1.1",
+                    estimated_distance: "Very Close (0-5m)"
+                },
+                threat_level: "SAFE ✓",
+                threat_score: 8,
+                color: "green",
+                threats: [],
+                encryption: {
+                    is_encrypted: true,
+                    status: "Uses WPA3-Personal encryption (Excellent)"
+                },
+                recommendations: [
+                    "✓ Network appears secure. Continue standard security practices.",
+                    "✓ Your WPA3 encryption is excellent - one of the best available.",
+                    "✓ Signal strength is very strong - maintain good connection quality.",
+                    "✓ Keep your router firmware updated for latest security patches."
+                ]
+            };
+
+            displayDemoContent('safe', demoData);
+        }
+
+        function showDemoUnsafeNetwork() {
+            const demoData = {
+                network_info: {
+                    ssid: "FreePublicWiFi",
+                    signal: 45,
+                    auth: "Open Network",
+                    gateway: "10.0.0.1",
+                    estimated_distance: "Medium (15-30m)"
+                },
+                threat_level: "UNSAFE ⚠️",
+                threat_score: 85,
+                color: "red",
+                threats: [
+                    "⚠️ Unencrypted network - High vulnerability",
+                    "⚠️ Open network - possible Evil Twin attack",
+                    "⚠️ Open/Guest network detected"
+                ],
+                encryption: {
+                    is_encrypted: false,
+                    status: "Open Network (No Encryption)"
+                },
+                recommendations: [
+                    "🔴 DO NOT enter passwords or payment information on this network",
+                    "🔴 Use a VPN immediately when connected to this network",
+                    "🔴 Consider connecting to a different, secure network instead",
+                    "🔴 Avoid accessing sensitive accounts or financial services",
+                    "🔴 Disable auto-connect feature for this network"
+                ]
+            };
+
+            displayDemoContent('unsafe', demoData);
+        }
+
+        function displayDemoContent(type, demoData) {
+            const demoContent = document.getElementById('demoContent');
+            const isUnsafe = type === 'unsafe';
+
+            let threatsHtml = '';
+            if (demoData.threats.length > 0) {
+                threatsHtml = `
+                    <div style="margin-top: 15px; padding: 15px; background: #ffe5e5; border-left: 4px solid #ff6b6b; border-radius: 8px;">
+                        <h4 style="color: #c92a2a; margin-top: 0;">🚨 Detected Threats:</h4>
+                        <ul style="list-style: none; padding: 0; margin: 10px 0 0 0;">
+                            ${demoData.threats.map(t => `<li style="margin: 8px 0; color: #c92a2a;">• ${t}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            let recommendationsHtml = demoData.recommendations.map(r => {
+                if (r.includes('🔴')) {
+                    return `<li style="background: #ffe5e5; border-left: 4px solid #ff6b6b; color: #c92a2a; margin: 8px 0;">${r}</li>`;
+                } else {
+                    return `<li style="background: #e5f5e5; border-left: 4px solid #2f9e44; color: #2f9e44; margin: 8px 0;">${r}</li>`;
+                }
+            }).join('');
+
+            demoContent.innerHTML = `
+                <div style="border-top: 2px solid #ddd; padding-top: 15px;">
+                    <h3 style="color: #667eea; margin-top: 0;">📊 Network Analysis Results</h3>
+                    
+                    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2em; color: white; background: linear-gradient(135deg, ${type === 'safe' ? '#00d084 0%, #00a35f' : '#ff6b6b 0%, #d41c1c'} 100%); box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
+                            ${type === 'safe' ? '✓' : '✕'}
+                        </div>
+                        <div>
+                            <h4 style="margin: 0 0 8px 0; color: #333;">${demoData.network_info.ssid}</h4>
+                            <p style="margin: 0; color: ${type === 'safe' ? '#2f9e44' : '#c92a2a'}; font-weight: bold; font-size: 1.2em;">${demoData.threat_level}</p>
+                            <p style="margin: 5px 0 0 0; color: #666;">Score: ${demoData.threat_score}/100</p>
+                        </div>
+                    </div>
+
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
+                        <h4 style="color: #667eea; margin-top: 0;">Network Details:</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.95em;">
+                            <div><strong>SSID:</strong> ${demoData.network_info.ssid}</div>
+                            <div><strong>Signal Strength:</strong> ${demoData.network_info.signal}%</div>
+                            <div><strong>Authentication:</strong> ${demoData.network_info.auth}</div>
+                            <div><strong>Distance:</strong> ${demoData.network_info.estimated_distance}</div>
+                            <div><strong>Gateway IP:</strong> ${demoData.network_info.gateway}</div>
+                            <div><strong>Encryption:</strong> <span style="padding: 4px 8px; border-radius: 4px; background: ${demoData.encryption.is_encrypted ? '#e5f5e5; color: #2f9e44;' : '#ffe5e5; color: #c92a2a;'} font-weight: 600;">${demoData.encryption.status}</span></div>
+                        </div>
+                    </div>
+
+                    ${threatsHtml}
+
+                    <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 8px; border: 1px solid #e0e0e0;">
+                        <h4 style="color: #667eea; margin-top: 0;">💡 Recommendations:</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            ${recommendationsHtml}
+                        </ul>
+                    </div>
+
+                    <div style="margin-top: 15px; padding: 12px; background: ${type === 'safe' ? '#e5f5e5' : '#ffe5e5'}; border-left: 4px solid ${type === 'safe' ? '#2f9e44' : '#ff6b6b'}; border-radius: 5px; color: ${type === 'safe' ? '#2f9e44' : '#c92a2a'}; font-size: 0.9em;">
+                        <strong>ℹ️ Demo Info:</strong> This is a demonstration showing how the WiFi Security Analyzer displays network analysis results. Click "Refresh Analysis" to see your actual network status.
+                    </div>
+                </div>
+            `;
+            demoContent.style.display = 'block';
+            demoContent.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function playVideo(videoType) {
+            const modal = document.getElementById('videoModal');
+            const videoContent = document.getElementById('videoContent');
+            
+            const videoData = {
+                'how-to-use': {
+                    title: 'How to Use WiFi Security Analyzer',
+                    description: 'Learn the basics of analyzing your WiFi network',
+                    content: `
+                        <div style="width: 100%; aspect-ratio: 16/9; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; border-radius: 10px; margin-bottom: 20px; color: white; position: relative; overflow: hidden;">
+                            <video width="100%" height="100%" controls style="border-radius: 10px; background: #000;">
+                                <source src="/static/videos/how-to-use.mp4" type="video/mp4">
+                                <p>Your browser doesn't support HTML5 video. Here's a <a href="/static/videos/how-to-use.mp4">link to the video</a> instead.</p>
+                            </video>
+                        </div>
+                        <div style="padding: 0 20px 20px 20px;">
+                            <h3 style="color: #333; margin-top: 0;">📹 How to Use WiFi Security Analyzer</h3>
+                            <p style="color: #666; font-size: 1em; line-height: 1.6;">Learn how to use the WiFi Security Analyzer to check if your network is safe. This tutorial covers all the main features including network analysis, threat detection, and security recommendations.</p>
+                            <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                                <p style="margin: 0; color: #666; font-size: 0.95em;"><strong>⏱️ Duration:</strong> 5-7 minutes</p>
+                                <p style="margin: 10px 0 0 0; color: #666; font-size: 0.95em;"><strong>📌 Topics Covered:</strong></p>
+                                <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #666;">
+                                    <li>How to launch the application</li>
+                                    <li>Understanding the network analysis results</li>
+                                    <li>Reading the threat level indicators</li>
+                                    <li>Interpreting security recommendations</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `
+                },
+                'wifi-security': {
+                    title: 'WiFi Security Best Practices',
+                    description: 'Understand encryption, threats, and staying safe',
+                    content: `
+                        <div style="width: 100%; aspect-ratio: 16/9; background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); display: flex; align-items: center; justify-content: center; border-radius: 10px; margin-bottom: 20px; color: white;">
+                            <video width="100%" height="100%" controls style="border-radius: 10px; background: #000;">
+                                <source src="/static/videos/wifi-security.mp4" type="video/mp4">
+                                <p>Your browser doesn't support HTML5 video. Here's a <a href="/static/videos/wifi-security.mp4">link to the video</a> instead.</p>
+                            </video>
+                        </div>
+                        <div style="padding: 0 20px 20px 20px;">
+                            <h3 style="color: #333; margin-top: 0;">🔒 WiFi Security Best Practices</h3>
+                            <p style="color: #666; font-size: 1em; line-height: 1.6;">Understand different encryption types, security threats, and how to keep your WiFi network safe. Learn about WPA3, WPA2, and why they matter for your security.</p>
+                            <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                                <p style="margin: 0; color: #666; font-size: 0.95em;"><strong>⏱️ Duration:</strong> 8-10 minutes</p>
+                                <p style="margin: 10px 0 0 0; color: #666; font-size: 0.95em;"><strong>📌 Topics Covered:</strong></p>
+                                <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #666;">
+                                    <li>WiFi encryption types (WEP, WPA, WPA2, WPA3)</li>
+                                    <li>Why encryption matters</li>
+                                    <li>Home network security setup</li>
+                                    <li>Router security best practices</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `
+                },
+                'threat-detection': {
+                    title: 'What Threats Look Like',
+                    description: 'Learn to identify different types of network threats',
+                    content: `
+                        <div style="width: 100%; aspect-ratio: 16/9; background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%); display: flex; align-items: center; justify-content: center; border-radius: 10px; margin-bottom: 20px; color: white;">
+                            <video width="100%" height="100%" controls style="border-radius: 10px; background: #000;">
+                                <source src="/static/videos/threat-detection.mp4" type="video/mp4">
+                                <p>Your browser doesn't support HTML5 video. Here's a <a href="/static/videos/threat-detection.mp4">link to the video</a> instead.</p>
+                            </video>
+                        </div>
+                        <div style="padding: 0 20px 20px 20px;">
+                            <h3 style="color: #333; margin-top: 0;">🚨 What Threats Look Like</h3>
+                            <p style="color: #666; font-size: 1em; line-height: 1.6;">Learn to identify different types of WiFi threats including Evil Twin attacks, SSID cloning, open networks, and malicious domains. Understand what the threat indicators mean.</p>
+                            <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                                <p style="margin: 0; color: #666; font-size: 0.95em;"><strong>⏱️ Duration:</strong> 6-8 minutes</p>
+                                <p style="margin: 10px 0 0 0; color: #666; font-size: 0.95em;"><strong>📌 Topics Covered:</strong></p>
+                                <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #666;">
+                                    <li>Evil Twin attacks explained</li>
+                                    <li>SSID cloning and spoofing</li>
+                                    <li>Open and guest networks</li>
+                                    <li>How to recognize threat patterns</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `
+                },
+                'domain-safety': {
+                    title: 'Check Website Safety',
+                    description: 'How to verify if websites are safe before visiting',
+                    content: `
+                        <div style="width: 100%; aspect-ratio: 16/9; background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); display: flex; align-items: center; justify-content: center; border-radius: 10px; margin-bottom: 20px; color: white;">
+                            <video width="100%" height="100%" controls style="border-radius: 10px; background: #000;">
+                                <source src="/static/videos/domain-safety.mp4" type="video/mp4">
+                                <p>Your browser doesn't support HTML5 video. Here's a <a href="/static/videos/domain-safety.mp4">link to the video</a> instead.</p>
+                            </video>
+                        </div>
+                        <div style="padding: 0 20px 20px 20px;">
+                            <h3 style="color: #333; margin-top: 0;">🔍 Check Website Safety</h3>
+                            <p style="color: #666; font-size: 1em; line-height: 1.6;">Learn how to verify if websites are safe before visiting them. Understand domain types, how to spot malicious domains, and protect yourself from phishing attacks.</p>
+                            <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                                <p style="margin: 0; color: #666; font-size: 0.95em;"><strong>⏱️ Duration:</strong> 5-6 minutes</p>
+                                <p style="margin: 10px 0 0 0; color: #666; font-size: 0.95em;"><strong>📌 Topics Covered:</strong></p>
+                                <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #666;">
+                                    <li>How to use the domain checker</li>
+                                    <li>Understanding domain types</li>
+                                    <li>Spotting malicious domains</li>
+                                    <li>Phishing attack prevention</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `
+                }
+            };
+
+            const data = videoData[videoType] || videoData['how-to-use'];
+            videoContent.innerHTML = data.content;
+            modal.style.display = 'flex';
+        }
+
+        function closeVideo() {
+            document.getElementById('videoModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('videoModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+        window.addEventListener('load', function() {
+            analyzeWiFi();
+            loadNearbyNetworks();
+            setInterval(analyzeWiFi, 30000);
+        });
+
+        async function analyzeWiFi() {
+            try {
+                const response = await fetch('/api/analyze-wifi');
+                const data = await response.json();
+                
+                if (data.status === 'error') {
+                    showError(data.message);
+                    return;
+                }
+                
+                displayNetworkAnalysis(data);
+            } catch (error) {
+                showError('Failed to analyze WiFi: ' + error.message);
+            }
+        }
+
+        function displayNetworkAnalysis(data) {
+            const networkInfo = data.network_info || {};
+            const encryption = data.encryption || {};
+            const threats = data.threats || [];
+            const recommendations = data.recommendations || [];
+            const threatLevel = data.threat_level || 'Unknown';
+            const threatScore = data.threat_score || 0;
+            const color = data.color || 'yellow';
+
+            document.getElementById('loadingStatus').style.display = 'none';
+            document.getElementById('currentNetworkContent').style.display = 'block';
+
+            const ssid = networkInfo.ssid || 'Unknown';
+            const signal = networkInfo.signal || 0;
+            const auth = networkInfo.auth || 'Unknown';
+            const gateway = networkInfo.gateway || 'Unknown';
+            const distance = networkInfo.estimated_distance || 'Unknown';
+
+            document.getElementById('networkName').textContent = ssid;
+            document.getElementById('ssid').textContent = ssid;
+            document.getElementById('signal').textContent = signal + '%';
+            document.getElementById('auth').textContent = auth;
+            document.getElementById('gateway').textContent = gateway;
+            document.getElementById('distance').textContent = distance;
+            document.getElementById('threatLevel').textContent = threatLevel;
+
+            const scorePercentage = Math.min(threatScore, 100);
+            document.getElementById('score').textContent = scorePercentage + '/100';
+            document.getElementById('scoreFill').style.width = scorePercentage + '%';
+
+            const indicator = document.getElementById('statusIndicator');
+            indicator.className = 'status-indicator ' + color;
+            indicator.textContent = getStatusEmoji(color);
+
+            const encryptionElement = document.getElementById('encryption');
+            const isSecure = encryption.is_encrypted;
+            const encryptionStatus = encryption.status || 'Unknown';
+            encryptionElement.innerHTML = `<span class="encryption-badge ${isSecure ? 'secure' : 'insecure'}">${encryptionStatus}</span>`;
+
+            const threatsList = document.getElementById('threatsList');
+            const threatsContent = document.getElementById('threatsContent');
+            const noThreatsMsg = document.getElementById('noThreatsMsg');
+
+            if (threats.length > 0) {
+                threatsList.innerHTML = threats.map(threat => `<li>${threat}</li>`).join('');
+                threatsContent.style.display = 'block';
+                noThreatsMsg.style.display = 'none';
+            } else {
+                threatsContent.style.display = 'none';
+                noThreatsMsg.style.display = 'block';
+            }
+
+            const recommendationsList = document.getElementById('recommendationsList');
+            recommendationsList.innerHTML = recommendations.map(rec => `<li>${rec}</li>`).join('');
+        }
+
+        function getStatusEmoji(color) {
+            switch(color) {
+                case 'green': return '✓';
+                case 'yellow': return '⚠';
+                case 'orange': return '⚡';
+                case 'red': return '✕';
+                default: return '?';
+            }
+        }
+
+        async function checkDomainSafety() {
+            const domain = document.getElementById('domainInput').value.trim();
+            if (!domain) {
+                showError('Please enter a domain name');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/check-domain', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ domain: domain })
+                });
+
+                const data = await response.json();
+                displayDomainResult(data);
+            } catch (error) {
+                showError('Failed to check domain: ' + error.message);
+            }
+        }
+
+        function displayDomainResult(data) {
+            const resultDiv = document.getElementById('domainResult');
+            const isSafe = data.safe;
+            const reason = data.reason || 'No additional information';
+            const domainType = identifyDomainType(data.domain || '');
+            const safetyExplanation = getSafetyExplanation(data.domain || '', isSafe);
+
+            resultDiv.className = 'domain-result show ' + (isSafe ? 'safe' : 'unsafe');
+            resultDiv.innerHTML = `
+                <h4>${isSafe ? '✓ Safe Domain' : '✕ Unsafe Domain'}</h4>
+                <div style="margin-top: 12px;">
+                    <p><strong>Domain Type:</strong> ${domainType}</p>
+                    <p><strong>Status:</strong> ${reason}</p>
+                    <p style="margin-top: 10px; padding: 10px; background: ${isSafe ? '#f0f8f0' : '#f8f0f0'}; border-radius: 5px; font-size: 0.9em;">
+                        <strong>Why ${isSafe ? 'it is Safe:' : 'it is Unsafe:'}</strong><br/>
+                        ${safetyExplanation}
+                    </p>
+                </div>
+            `;
+        }
+
+        function identifyDomainType(domain) {
+            domain = domain.toLowerCase();
+            
+            // Commercial domains
+            if (domain.includes('.com')) return '🏢 Commercial Domain';
+            if (domain.includes('.co')) return '🏢 Commercial Domain';
+            if (domain.includes('.biz')) return '🏢 Business Domain';
+            
+            // Educational domains
+            if (domain.includes('.edu')) return '🎓 Educational Domain';
+            if (domain.includes('.ac.uk')) return '🎓 Educational Domain (UK)';
+            
+            // Government domains
+            if (domain.includes('.gov')) return '🏛️ Government Domain';
+            if (domain.includes('.gov.uk')) return '🏛️ Government Domain (UK)';
+            
+            // Organization domains
+            if (domain.includes('.org')) return '🤝 Organization Domain';
+            if (domain.includes('.ngo')) return '🤝 Non-Profit Organization';
+            if (domain.includes('.charity')) return '🤝 Charity Organization';
+            
+            // Network/Infrastructure
+            if (domain.includes('.net')) return '🌐 Network Infrastructure';
+            if (domain.includes('.io')) return '🌐 Tech Startup Domain';
+            if (domain.includes('.app')) return '🌐 Application Domain';
+            if (domain.includes('.dev')) return '🌐 Developer Domain';
+            
+            // Social/Media
+            if (domain.includes('.tv')) return '📺 Media Domain';
+            if (domain.includes('.media')) return '📺 Media Domain';
+            if (domain.includes('.news')) return '📰 News Domain';
+            
+            // Country codes
+            if (domain.match(/\.[a-z]{2}$/)) return '🌍 Country-Specific Domain';
+            
+            // Finance
+            if (domain.includes('.bank')) return '🏦 Banking Domain';
+            if (domain.includes('.finance')) return '💰 Finance Domain';
+            if (domain.includes('.insurance')) return '📋 Insurance Domain';
+            
+            // Unknown
+            return '❓ Generic Domain';
+        }
+
+        function getSafetyExplanation(domain, isSafe) {
+            domain = domain.toLowerCase();
+            
+            if (!isSafe) {
+                // Check for specific threats
+                if (domain.includes('trojan')) {
+                    return '⚠️ Domain contains "trojan" keyword - associated with malicious software. Visiting this domain could expose your system to malware and security threats.';
+                }
+                if (domain.includes('malware')) {
+                    return '⚠️ Domain contains "malware" keyword - directly associated with malicious software. This domain is likely used for distributing harmful code.';
+                }
+                if (domain.includes('phishing')) {
+                    return '⚠️ Domain contains "phishing" keyword - likely used for phishing attacks to steal your credentials and personal information.';
+                }
+                if (domain.includes('ransomware')) {
+                    return '⚠️ Domain contains "ransomware" keyword - used to distribute ransomware that encrypts your files. Do NOT visit this domain.';
+                }
+                if (domain.includes('botnet')) {
+                    return '⚠️ Domain contains "botnet" keyword - used to control compromised computers. Visiting could put your device at risk.';
+                }
+                if (domain.includes('exploit')) {
+                    return '⚠️ Domain contains "exploit" keyword - likely used for distributing security exploits and vulnerabilities. High risk of infection.';
+                }
+                if (domain.includes('backdoor')) {
+                    return '⚠️ Domain contains "backdoor" keyword - used to create unauthorized access to systems. Your computer could be compromised.';
+                }
+                if (domain.includes('spyware')) {
+                    return '⚠️ Domain contains "spyware" keyword - used to distribute software that monitors your activity and steals data.';
+                }
+                // Known malicious domain
+                return '⚠️ This domain is in our malicious domain database. It has been flagged for suspicious or malicious activity. Visiting could compromise your security and privacy.';
+            } else {
+                // Safe domain explanations
+                if (domain.includes('.gov') || domain.includes('.edu')) {
+                    return '✓ Government and educational domains are typically trustworthy and well-maintained. These are official institutional domains with strong security standards.';
+                }
+                if (domain.includes('.org') && !domain.includes('malware') && !domain.includes('attack')) {
+                    return '✓ Organization domains are generally safe. These are typically non-profit and public institutions that maintain security standards.';
+                }
+                if (domain.includes('.com') || domain.includes('.co')) {
+                    return '✓ Commercial domains are standard business domains. This domain resolves properly and appears to be legitimate. Always ensure HTTPS connection for sensitive transactions.';
+                }
+                // Default safe explanation
+                return '✓ This domain appears legitimate and is not on any known malicious domain list. It resolves properly in DNS. However, always verify the website uses HTTPS (secure connection) before entering sensitive information.';
+            }
+        }
+
+        function handleDomainKeyPress(event) {
+            if (event.key === 'Enter') {
+                checkDomainSafety();
+            }
+        }
+
+        async function loadNearbyNetworks() {
+            try {
+                const response = await fetch('/api/networks-nearby');
+                const data = await response.json();
+
+                if (data.error) {
+                    showError('Failed to load nearby networks: ' + data.error);
+                    return;
+                }
+
+                displayNearbyNetworks(data.networks || []);
+            } catch (error) {
+                showError('Failed to load nearby networks: ' + error.message);
+            }
+        }
+
+        function displayNearbyNetworks(networks) {
+            document.getElementById('networksLoading').style.display = 'none';
+
+            const grid = document.getElementById('networksGrid');
+            grid.style.display = 'grid';
+
+            if (networks.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1;">No nearby networks found</p>';
+                return;
+            }
+
+            grid.innerHTML = networks.map((network, index) => {
+                // Determine security level and color
+                let securityLevel = 'UNSECURE';
+                let securityColor = '#ff6b6b';
+                let securityIcon = '🔴';
+                let isSecure = false;
+                let buttonColor = '#ff6b6b';
+                let buttonText = '❌ UNSECURE';
+                let encryptionType = 'No Encryption';
+                
+                const security = (network.security || '').toUpperCase();
+                
+                if (security.includes('WPA3')) {
+                    securityLevel = '✅ SECURE (WPA3)';
+                    securityColor = '#2f9e44';
+                    securityIcon = '🟢';
+                    isSecure = true;
+                    buttonColor = '#2f9e44';
+                    buttonText = '✅ SECURE';
+                    encryptionType = 'WPA3 - Advanced Encryption';
+                } else if (security.includes('WPA2')) {
+                    securityLevel = '✅ SECURE (WPA2)';
+                    securityColor = '#2f9e44';
+                    securityIcon = '🟢';
+                    isSecure = true;
+                    buttonColor = '#2f9e44';
+                    buttonText = '✅ SECURE';
+                    encryptionType = 'WPA2 - Standard Encryption';
+                } else if (security.includes('WPA')) {
+                    securityLevel = '✅ SECURE (WPA)';
+                    securityColor = '#2f9e44';
+                    securityIcon = '🟢';
+                    isSecure = true;
+                    buttonColor = '#2f9e44';
+                    buttonText = '✅ SECURE';
+                    encryptionType = 'WPA - Basic Encryption';
+                } else if (security.includes('WEP')) {
+                    securityLevel = '❌ UNSECURE (WEP)';
+                    securityColor = '#ff6b6b';
+                    securityIcon = '🔴';
+                    isSecure = false;
+                    buttonColor = '#ff6b6b';
+                    buttonText = '❌ UNSECURE';
+                    encryptionType = 'WEP - Deprecated (Insecure)';
+                } else if (security.includes('OPEN') || security === '') {
+                    securityLevel = '❌ UNSECURE (OPEN)';
+                    securityColor = '#ff6b6b';
+                    securityIcon = '🔴';
+                    isSecure = false;
+                    buttonColor = '#ff6b6b';
+                    buttonText = '❌ UNSECURE';
+                    encryptionType = 'Open Network - No Encryption';
+                } else {
+                    // Default: If no recognized encryption type, mark as UNSECURE for safety
+                    securityLevel = '❌ UNSECURE';
+                    securityColor = '#ff6b6b';
+                    securityIcon = '🔴';
+                    isSecure = false;
+                    buttonColor = '#ff6b6b';
+                    buttonText = '❌ UNSECURE';
+                    encryptionType = 'Unknown Encryption - Treated as Unsecure';
+                }
+                
+                return `
+                    <div class="network-item" onclick="selectNetwork('${network.name}')" style="border-left: 4px solid ${securityColor};">
+                        <h4>📡 ${network.name}</h4>
+                        <p style="font-size: 0.85em; color: #666; margin-bottom: 8px;">${network.security || 'No Encryption Detected'}</p>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                            <span style="font-size: 1.2em;">${securityIcon}</span>
+                            <span style="color: ${securityColor}; font-weight: 600; font-size: 0.9em;">${securityLevel}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                            <span class="network-status-badge">${network.status || 'Available'}</span>
+                            ${network.signal ? `<span style="font-size: 0.85em; color: #666;">Signal: ${network.signal}</span>` : ''}
+                        </div>
+                        <button style="width: 100%; margin-top: 12px; padding: 10px; background: ${buttonColor}; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.95em; transition: all 0.3s ease; opacity: 0.9;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.02)'" onmouseout="this.style.opacity='0.9'; this.style.transform='scale(1)'" onclick="event.stopPropagation(); showNetworkSecurityDetails({ssid: '${network.name}', encryptionType: '${encryptionType}', isSecure: ${isSecure}})">
+                            ${buttonText}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showNetworkSecurityDetails(network) {
+            const modal = document.getElementById('securityModal');
+            const statusBadge = document.getElementById('modalStatusBadge');
+            const secureContent = document.getElementById('secureContent');
+            const unsecureContent = document.getElementById('unsecureContent');
+
+            // Set network name
+            document.getElementById('modalNetworkName').textContent = `Network: ${network.ssid}`;
+
+            // Set encryption info
+            document.getElementById('modalEncryptionInfo').innerHTML = `<strong>Encryption:</strong> ${network.encryptionType || 'Unknown'}`;
+
+            // Clear previous content
+            secureContent.style.display = 'none';
+            unsecureContent.style.display = 'none';
+
+            if (network.isSecure) {
+                // Secure network
+                statusBadge.className = 'security-status-badge secure';
+                statusBadge.textContent = '🟢 SECURE';
+
+                let secureReasons = '';
+                const encType = network.encryptionType || 'Unknown';
+
+                if (encType.includes('WPA3')) {
+                    secureReasons = `
+                        <p><strong>WPA3 - Military-Grade Encryption</strong></p>
+                        <ul>
+                            <li><strong>🔐 Military-grade encryption:</strong> Uses AES with 192-bit keys for business networks and 128-bit for personal</li>
+                            <li><strong>🛡️ Brute-force protection:</strong> Protects against dictionary and brute-force attacks even on weak passwords</li>
+                            <li><strong>🔒 Simultaneous Authentication of Equals (SAE):</strong> Replaces WPA2's WPA handshake with more secure SAE protocol</li>
+                            <li><strong>📡 Individualized Data Encryption (OWE):</strong> Encrypts data even on open networks</li>
+                            <li><strong>✓ Latest standard:</strong> Recommended for maximum security</li>
+                        </ul>
+                        <p><strong>Protection Level: MAXIMUM</strong> - Your data is extremely well protected.</p>
+                    `;
+                } else if (encType.includes('WPA2')) {
+                    secureReasons = `
+                        <p><strong>WPA2 - Industry Standard Encryption</strong></p>
+                        <ul>
+                            <li><strong>🔐 AES Encryption:</strong> Uses Advanced Encryption Standard with 128-bit keys</li>
+                            <li><strong>🛡️ CCMP protocol:</strong> Counter Mode Cipher Block Chaining Message Authentication Code Protocol</li>
+                            <li><strong>🔒 Secure handshake:</strong> Uses 4-way handshake for authentication</li>
+                            <li><strong>📡 Industry approved:</strong> Widely trusted and battle-tested standard</li>
+                            <li><strong>✓ Good security:</strong> Suitable for most personal and business use</li>
+                        </ul>
+                        <p><strong>Protection Level: VERY GOOD</strong> - Your data is well protected with industry-standard encryption.</p>
+                    `;
+                } else if (encType.includes('WPA')) {
+                    secureReasons = `
+                        <p><strong>WPA - Basic Encryption</strong></p>
+                        <ul>
+                            <li><strong>🔐 TKIP Encryption:</strong> Temporal Key Integrity Protocol with 128-bit keys</li>
+                            <li><strong>🛡️ Stronger than WEP:</strong> Improves upon WEP but less secure than WPA2</li>
+                            <li><strong>🔒 Better than no encryption:</strong> Protects data from casual eavesdropping</li>
+                            <li><strong>📡 Legacy support:</strong> Some older devices may require WPA</li>
+                            <li><strong>⚠️ Note:</strong> Older standard, consider upgrading to WPA2 or WPA3</li>
+                        </ul>
+                        <p><strong>Protection Level: BASIC</strong> - Your data has basic encryption, but consider upgrading to WPA2/WPA3.</p>
+                    `;
+                }
+
+                document.getElementById('secureReasonsContent').innerHTML = secureReasons;
+
+                let secureFeatures = '<ul>';
+                if (encType.includes('WPA3')) {
+                    secureFeatures += '<li>🔐 Next-generation encryption standard</li>';
+                    secureFeatures += '<li>🛡️ Protection against brute-force attacks</li>';
+                    secureFeatures += '<li>🔒 Military-grade security</li>';
+                    secureFeatures += '<li>✓ Safe for all activities including banking</li>';
+                } else if (encType.includes('WPA2')) {
+                    secureFeatures += '<li>🔐 AES encryption (128-bit)</li>';
+                    secureFeatures += '<li>🛡️ Secure 4-way handshake</li>';
+                    secureFeatures += '<li>🔒 Industry-standard security</li>';
+                    secureFeatures += '<li>✓ Suitable for banking and sensitive data</li>';
+                } else if (encType.includes('WPA')) {
+                    secureFeatures += '<li>🔐 TKIP encryption (128-bit)</li>';
+                    secureFeatures += '<li>🛡️ Better than WEP</li>';
+                    secureFeatures += '<li>🔒 Basic encryption protection</li>';
+                    secureFeatures += '<li>⚠️ Consider using WPA2/WPA3 if available</li>';
+                }
+                secureFeatures += '</ul>';
+                document.getElementById('secureFeatures').innerHTML = secureFeatures;
+
+                secureContent.style.display = 'block';
+            } else {
+                // Unsecure network
+                statusBadge.className = 'security-status-badge unsecure';
+                statusBadge.textContent = '🔴 UNSECURE';
+
+                let unsecureReasons = '';
+                const encType = network.encryptionType || 'Unknown';
+
+                if (encType === 'OPEN' || encType === 'Open') {
+                    unsecureReasons = `
+                        <p><strong>❌ NO ENCRYPTION - COMPLETELY EXPOSED</strong></p>
+                        <ul>
+                            <li><strong>⚠️ No encryption:</strong> All data is transmitted in plain text</li>
+                            <li><strong>🚨 Anyone can intercept:</strong> Anyone within WiFi range can capture your data</li>
+                            <li><strong>🔓 Man-in-the-middle attacks:</strong> Attackers can position themselves between you and the router</li>
+                            <li><strong>💣 Packet sniffing:</strong> Tools like Wireshark can capture all your traffic</li>
+                            <li><strong>🎯 Identity theft risk:</strong> Personal information is fully exposed</li>
+                            <li><strong>💳 Banking fraud risk:</strong> Credit card and banking data can be stolen</li>
+                        </ul>
+                        <p><strong>Threat Level: CRITICAL</strong> - This network provides NO security whatsoever.</p>
+                    `;
+                } else if (encType === 'WEP') {
+                    unsecureReasons = `
+                        <p><strong>❌ WEP - DEPRECATED AND CRACKABLE ENCRYPTION</strong></p>
+                        <ul>
+                            <li><strong>⚠️ Outdated standard:</strong> WEP (Wired Equivalent Privacy) is 20+ years old and fully deprecated</li>
+                            <li><strong>🚨 Easily crackable:</strong> Can be broken in minutes with freely available tools</li>
+                            <li><strong>🔓 Static encryption keys:</strong> Keys don't change, making them vulnerable</li>
+                            <li><strong>💣 Poor key management:</strong> Uses weak IV (Initialization Vector) generation</li>
+                            <li><strong>🎯 Vulnerable to attacks:</strong> RC4 algorithm has known weaknesses</li>
+                            <li><strong>💳 Not safe for any sensitive data:</strong> Encryption can be broken almost instantly</li>
+                        </ul>
+                        <p><strong>Threat Level: CRITICAL</strong> - WEP is completely obsolete and should never be used.</p>
+                    `;
+                } else {
+                    unsecureReasons = `
+                        <p><strong>❌ UNKNOWN/UNSECURE ENCRYPTION</strong></p>
+                        <ul>
+                            <li><strong>⚠️ Unrecognized encryption type:</strong> We cannot verify the security of this network</li>
+                            <li><strong>🚨 Safety-first approach:</strong> When unsure, we classify as unsecure for your protection</li>
+                            <li><strong>🔓 Potential risks:</strong> May use deprecated or weak encryption</li>
+                            <li><strong>💣 Unknown vulnerabilities:</strong> May have unknown security issues</li>
+                            <li><strong>🎯 Data exposure risk:</strong> Recommend not using sensitive services</li>
+                            <li><strong>💳 Not recommended:</strong> Avoid banking and sensitive transactions</li>
+                        </ul>
+                        <p><strong>Threat Level: HIGH</strong> - Encryption type is unknown or unsupported.</p>
+                    `;
+                }
+
+                document.getElementById('unsecureReasonsContent').innerHTML = unsecureReasons;
+                unsecureContent.style.display = 'block';
+            }
+
+            // Show the modal with animation
+            modal.classList.add('show');
+        }
+
+        function selectNetwork(networkName) {
+            alert('Network selected: ' + networkName + '\n\nYou can now connect to this network from your device settings.');
+        }
+
+        function showError(message) {
+            console.error(message);
+            alert('Error: ' + message);
+        }
+    </script>
+
+    <!-- Security Details Modal -->
+    <div id="securityModal" class="security-modal">
+        <div class="security-modal-content">
+            <div class="security-modal-header">
+                <div class="security-modal-title" id="modalTitle">Network Security Analysis</div>
+                <button class="security-modal-close" onclick="closeSecurityModal()">&times;</button>
+            </div>
+
+            <div class="security-network-name" id="modalNetworkName">Network: Loading...</div>
+
+            <div id="modalStatusBadge" class="security-status-badge"></div>
+
+            <div class="security-encryption-info" id="modalEncryptionInfo"></div>
+
+            <!-- Secure Network Content -->
+            <div id="secureContent" style="display: none;">
+                <div class="security-details-section">
+                    <div class="security-section-title">✅ Why This Network is SECURE</div>
+                    <div class="security-section-content secure" id="secureReasonsContent"></div>
+                </div>
+
+                <div class="security-details-section">
+                    <div class="security-section-title">🔐 Security Features</div>
+                    <div class="security-section-content secure" id="secureFeatures"></div>
+                </div>
+
+                <div class="security-details-section">
+                    <div class="security-section-title">✓ Safe Activities</div>
+                    <div class="security-section-content secure">
+                        <ul>
+                            <li><strong>✓ Banking transactions</strong> - Safe and encrypted</li>
+                            <li><strong>✓ Password entry</strong> - Protected by encryption</li>
+                            <li><strong>✓ Email and messaging</strong> - Secure communication</li>
+                            <li><strong>✓ Shopping & payments</strong> - Safe for transactions</li>
+                            <li><strong>✓ Personal information</strong> - Protected from eavesdropping</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unsecure Network Content -->
+            <div id="unsecureContent" style="display: none;">
+                <div class="security-warning-box">
+                    <strong>⚠️ WARNING:</strong> This network does NOT provide encryption. All your data is transmitted in clear text and can be intercepted by anyone!
+                </div>
+
+                <div class="security-details-section">
+                    <div class="security-section-title">❌ Why This Network is UNSECURE</div>
+                    <div class="security-section-content unsecure" id="unsecureReasonsContent"></div>
+                </div>
+
+                <div class="security-details-section">
+                    <div class="security-section-title">🔓 Security Risks</div>
+                    <div class="security-section-content unsecure">
+                        <ul>
+                            <li><strong>✗ Password theft</strong> - Hackers can steal your passwords</li>
+                            <li><strong>✗ Data interception</strong> - All data can be captured</li>
+                            <li><strong>✗ Man-in-the-middle attacks</strong> - Attacker can intercept traffic</li>
+                            <li><strong>✗ Malware injection</strong> - Malicious code can be injected</li>
+                            <li><strong>✗ Identity theft</strong> - Personal info can be stolen</li>
+                            <li><strong>✗ Banking fraud</strong> - Financial accounts at risk</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="security-details-section">
+                    <div class="security-section-title">❌ Avoid These Activities</div>
+                    <div class="security-section-content unsecure">
+                        <ul>
+                            <li><strong>✗ Banking transactions</strong> - Very risky!</li>
+                            <li><strong>✗ Password entry</strong> - Will be exposed</li>
+                            <li><strong>✗ Email with sensitive info</strong> - Can be read</li>
+                            <li><strong>✗ Shopping/payments</strong> - Credit card at risk</li>
+                            <li><strong>✗ Account login</strong> - Credentials can be captured</li>
+                            <li><strong>✗ Personal information</strong> - Privacy violated</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="security-details-section">
+                    <div class="security-section-title">🔒 If You Must Connect</div>
+                    <div class="security-section-content unsecure">
+                        <ul>
+                            <li><strong>Use a VPN</strong> - Encrypts all traffic</li>
+                            <li><strong>Limit activities</strong> - Only browse, no transactions</li>
+                            <li><strong>Disable auto-connect</strong> - Don't auto-join networks</li>
+                            <li><strong>Turn off file sharing</strong> - Prevent data leaks</li>
+                            <li><strong>Use HTTPS only</strong> - Verify the lock icon</li>
+                            <li><strong>Avoid sensitive data</strong> - Don't enter passwords</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="security-details-section">
+                    <div class="security-section-title">📋 Terms & Conditions</div>
+                    <div class="security-section-content unsecure">
+                        <p>By connecting to this unsecure network, you acknowledge:</p>
+                        <ul>
+                            <li>Your data is unencrypted and visible to others</li>
+                            <li>You accept the risk of data interception</li>
+                            <li>We are not responsible for data theft or loss</li>
+                            <li>Use VPN for sensitive activities</li>
+                            <li>Connect at your own risk</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="security-footer">
+                WiFi Security Analyzer - Stay Safe Online
+            </div>
+
+            <div class="security-action-buttons">
+                <button class="security-action-btn close-btn" onclick="closeSecurityModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function closeSecurityModal() {
+            document.getElementById('securityModal').classList.remove('show');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('securityModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSecurityModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeSecurityModal();
+            }
+        });
+    </script>
+</body>
+</html>
