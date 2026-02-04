@@ -548,10 +548,15 @@ def admin_stats():
 
 @app.route("/log/<device>")
 def log_device(device):
-    with open("connections.txt", "a") as f:
-        f.write(device + "\n")
+    try:
+        with open("connections.txt", "a") as f:
+            f.write(device + "\n")
+    except Exception as e:
+        # Silently fail if file can't be written (common in cloud hosting)
+        pass
     return "Logged"
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
+
